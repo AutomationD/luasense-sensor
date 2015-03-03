@@ -1,6 +1,6 @@
 language: cpp
 before_install:
-- sudo apt-get -y install srecord
+- sudo apt-get -y install srecord bc
 install:
 - mkdir -p $TRAVIS_BUILD_DIR/bin/
 - wget https://github.com/nodemcu/nodemcu-firmware/raw/master/pre_build/latest/nodemcu_latest.bin -O $TRAVIS_BUILD_DIR/bin/0x00000.bin
