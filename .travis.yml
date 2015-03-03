@@ -6,8 +6,8 @@ install:
 - wget https://github.com/nodemcu/nodemcu-firmware/raw/master/pre_build/latest/nodemcu_latest.bin -O $TRAVIS_BUILD_DIR/bin/0x00000.bin
 - git clone https://github.com/xlfe/spiffy.git spiffy
 script:
-- main_firmware_offset=0x$(echo "obase=16; $(($(stat --format="%s" 0x00000.bin)))" | bc)
-- spiff_start_offset=0x$(echo "obase=16; $(($(stat --format="%s" 0x00000.bin) + 16384))" | bc)
+- main_firmware_offset=0x$(echo "obase=16; $(($(stat --format="%s" $TRAVIS_BUILD_DIR/bin/0x00000.bin)))" | bc)
+- spiff_start_offset=0x$(echo "obase=16; $(($(stat --format="%s" $TRAVIS_BUILD_DIR/bin/0x00000.bin) + 16384))" | bc)
 - file_name="luasense-sensor_v${TRAVIS_TAG}.${TRAVIS_BUILD_NUMBER}.bin"
 - cd $TRAVIS_BUILD_DIR/spiffy
 - mkdir files/
@@ -16,10 +16,7 @@ script:
 - cp -R $TRAVIS_BUILD_DIR/app/* $TRAVIS_BUILD_DIR/spiffy/files/
 - $TRAVIS_BUILD_DIR/spiffy/build/spiffy
 - mv $TRAVIS_BUILD_DIR/spiffy/spiff_rom.bin $TRAVIS_BUILD_DIR/bin/${spiff_start_offset}.bin
-- srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary 0x00000.bin -binary -fill 0xff $main_firmware_offset $spiff_start_offset ${spiff_start_offset}.bin -binary -offset $spiff_start_offset
-
-
-- srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary $TRAVIS_BUILD_DIR/bin/nodemcu_latest.bin -fill 0xff 0x00000 0x4000 $TRAVIS_BUILD_DIR/bin/spiff_rom.bin -binary -offset 0x4000
+- srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary $TRAVIS_BUILD_DIR/bin/0x00000.bin -binary -fill 0xff $main_firmware_offset $spiff_start_offset $TRAVIS_BUILD_DIR/bin/${spiff_start_offset}.bin -binary -offset $spiff_start_offset
 deploy:
   provider: releases
   api_key: "${GITHUB_OAUTH}"
