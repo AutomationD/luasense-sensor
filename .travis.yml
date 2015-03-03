@@ -2,6 +2,7 @@ language: cpp
 before_install:
 - #
 install:
+- mkdir -p $TRAVIS_BUILD_DIR/bin/
 - wget https://github.com/nodemcu/nodemcu-firmware/raw/master/pre_build/latest/nodemcu_latest.bin -O $TRAVIS_BUILD_DIR/bin/nodemcu_latest.bin
 - git clone https://github.com/xlfe/spiffy.git spiffy
 script:
