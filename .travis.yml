@@ -15,9 +15,7 @@ script:
 - make all
 - cp -R $TRAVIS_BUILD_DIR/app/* $TRAVIS_BUILD_DIR/spiffy/files/
 - $TRAVIS_BUILD_DIR/spiffy/build/spiffy
-- cd $TRAVIS_BUILD_DIR/bin/
-- mv $TRAVIS_BUILD_DIR/bin/spiff_rom.bin $TRAVIS_BUILD_DIR/bin/${spiff_start_offset}.bin
-- echo "Merging firmware and spiff fs with the offset: ${main_firmware_offset}"
+- mv $TRAVIS_BUILD_DIR/spiffy/spiff_rom.bin $TRAVIS_BUILD_DIR/bin/${spiff_start_offset}.bin
 - srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary 0x00000.bin -binary -fill 0xff $main_firmware_offset $spiff_start_offset ${spiff_start_offset}.bin -binary -offset $spiff_start_offset
 
 
