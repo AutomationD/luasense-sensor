@@ -13,10 +13,9 @@ script:
 - mkdir files/
 - mkdir build/
 - make all
-- cd $TRAVIS_BUILD_DIR
 - cp -R $TRAVIS_BUILD_DIR/app/* $TRAVIS_BUILD_DIR/spiffy/files/
 - $TRAVIS_BUILD_DIR/spiffy/build/spiffy
-- mv $TRAVIS_BUILD_DIR/spiff_rom.bin $TRAVIS_BUILD_DIR/bin/spiff_rom.bin
+- mv $TRAVIS_BUILD_DIR/spiffy/spiff_rom.bin $TRAVIS_BUILD_DIR/bin/spiff_rom.bin
 - srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary $TRAVIS_BUILD_DIR/bin/nodemcu_latest.bin -binary $TRAVIS_BUILD_DIR/bin/spiff_rom.bin -binary -offset 0x4000
 deploy:
   provider: releases
