@@ -16,7 +16,7 @@ script:
 - cp -R $TRAVIS_BUILD_DIR/app/* $TRAVIS_BUILD_DIR/spiffy/files/
 - $TRAVIS_BUILD_DIR/spiffy/build/spiffy
 - mv $TRAVIS_BUILD_DIR/spiffy/spiff_rom.bin $TRAVIS_BUILD_DIR/bin/spiff_rom.bin
-- srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary $TRAVIS_BUILD_DIR/bin/nodemcu_latest.bin -fill 0xff 0x00000 0x4000 -binary $TRAVIS_BUILD_DIR/bin/spiff_rom.bin -binary -offset 0x4000
+- srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary $TRAVIS_BUILD_DIR/bin/nodemcu_latest.bin -fill 0xff 0x00000 0x4000 $TRAVIS_BUILD_DIR/bin/spiff_rom.bin -binary -offset 0x4000
 deploy:
   provider: releases
   api_key: "${GITHUB_OAUTH}"
