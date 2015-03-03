@@ -3,11 +3,11 @@ before_install:
 - sudo apt-get -y install srecord
 install:
 - mkdir -p $TRAVIS_BUILD_DIR/bin/
-- wget https://github.com/nodemcu/nodemcu-firmware/raw/master/pre_build/latest/nodemcu_latest.bin -O $TRAVIS_BUILD_DIR/bin/nodemcu_latest.bin
+- wget https://github.com/nodemcu/nodemcu-firmware/raw/master/pre_build/latest/nodemcu_latest.bin -O $TRAVIS_BUILD_DIR/bin/0x00000.bin
 - git clone https://github.com/xlfe/spiffy.git spiffy
 script:
-- main_firmware_size=$(stat -c %s $TRAVIS_BUILD_DIR/bin/nodemcu_latest.bin)
-- spiff_firmware_offset=$(expr 65536 + $main_firmware_size + 16384)
+- main_firmware_offset=0x$(echo "obase=16; $(($(stat -f%z 0x00000.bin)))" | bc)
+- spiff_start_offset=0x$(echo "obase=16; $(($(stat -f%z 0x00000.bin) + 16384))" | bc)
 - file_name="luasense-sensor_v${TRAVIS_TAG}.${TRAVIS_BUILD_NUMBER}.bin"
 - cd $TRAVIS_BUILD_DIR/spiffy
 - mkdir files/
@@ -15,7 +15,12 @@ script:
 - make all
 - cp -R $TRAVIS_BUILD_DIR/app/* $TRAVIS_BUILD_DIR/spiffy/files/
 - $TRAVIS_BUILD_DIR/spiffy/build/spiffy
-- mv $TRAVIS_BUILD_DIR/spiffy/spiff_rom.bin $TRAVIS_BUILD_DIR/bin/spiff_rom.bin
+- cd $TRAVIS_BUILD_DIR/bin/
+- mv $TRAVIS_BUILD_DIR/bin/spiff_rom.bin $TRAVIS_BUILD_DIR/bin/${spiff_start_offset}.bin
+- echo "Merging firmware and spiff fs with the offset: ${main_firmware_offset}"
+- srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary 0x00000.bin -binary -fill 0xff $main_firmware_offset $spiff_start_offset ${spiff_start_offset}.bin -binary -offset $spiff_start_offset
+
+
 - srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary $TRAVIS_BUILD_DIR/bin/nodemcu_latest.bin -fill 0xff 0x00000 0x4000 $TRAVIS_BUILD_DIR/bin/spiff_rom.bin -binary -offset 0x4000
 deploy:
   provider: releases
