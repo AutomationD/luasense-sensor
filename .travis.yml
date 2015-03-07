@@ -3,20 +3,25 @@ before_install:
 - sudo apt-get -y install srecord bc
 install:
 - mkdir -p $TRAVIS_BUILD_DIR/bin/
-- wget https://github.com/nodemcu/nodemcu-firmware/raw/master/pre_build/latest/nodemcu_latest.bin -O $TRAVIS_BUILD_DIR/bin/0x00000.bin
+- wget https://github.com/nodemcu/nodemcu-firmware/raw/master/pre_build/latest/nodemcu_latest.bin
+  -O $TRAVIS_BUILD_DIR/bin/0x00000.bin
 - git clone https://github.com/xlfe/spiffy.git spiffy
 script:
-- main_firmware_offset=0x$(echo "obase=16; $(($(stat --format="%s" $TRAVIS_BUILD_DIR/bin/0x00000.bin)))" | bc)
-- spiff_start_offset=0x$(echo "obase=16; $(($(stat --format="%s" $TRAVIS_BUILD_DIR/bin/0x00000.bin) + 16384))" | bc)
+- main_firmware_offset=0x$(echo "obase=16; $(($(stat --format="%s" $TRAVIS_BUILD_DIR/bin/0x00000.bin)))"
+  | bc)
+- spiff_start_offset=0x$(echo "obase=16; $(($(stat --format="%s" $TRAVIS_BUILD_DIR/bin/0x00000.bin)
+  + 16384))" | bc)
 - file_name="luasense-sensor_v${TRAVIS_TAG}.${TRAVIS_BUILD_NUMBER}.bin"
 - cd $TRAVIS_BUILD_DIR/spiffy
 - mkdir files/
 - mkdir build/
 - make all
 - cp -R $TRAVIS_BUILD_DIR/app/* $TRAVIS_BUILD_DIR/spiffy/files/
-- $TRAVIS_BUILD_DIR/spiffy/build/spiffy
+- "$TRAVIS_BUILD_DIR/spiffy/build/spiffy"
 - mv $TRAVIS_BUILD_DIR/spiffy/spiff_rom.bin $TRAVIS_BUILD_DIR/bin/${spiff_start_offset}.bin
-- srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary $TRAVIS_BUILD_DIR/bin/0x00000.bin -binary -fill 0xff $main_firmware_offset $spiff_start_offset $TRAVIS_BUILD_DIR/bin/${spiff_start_offset}.bin -binary -offset $spiff_start_offset
+- srec_cat -output $TRAVIS_BUILD_DIR/bin/${file_name} -binary $TRAVIS_BUILD_DIR/bin/0x00000.bin
+  -binary -fill 0xff $main_firmware_offset $spiff_start_offset $TRAVIS_BUILD_DIR/bin/${spiff_start_offset}.bin
+  -binary -offset $spiff_start_offset
 deploy:
   provider: releases
   api_key: "${GITHUB_OAUTH}"
@@ -26,4 +31,4 @@ deploy:
     tags: true
 env:
   global:
-  - secure: OVFK1zFj8VFVITWIGR2UlinVoTFNjlcQZeFt4xpn+B0wLz1mAWnR//F49qLkAcZt2ca8ogbQwEyDenFfkcSKOkUpvivyDatkHEt4WAhdXeg2y3zdHjX7NntscQBpTUmwjhV/0OA0qV9sNLK5r1t45oDh2NVcpfEQTJP5oYKfe6I=
+    secure: jqEOM7rmkVRa6ajGKLXb3ivN8mo/R05Dq85V9+V1DHLKD+jXejeCO96GUW4QIQ7cQ5+NE9YDqxPltYPrIKUhICpkbQ3TNTMTOUCRA+YcfeOkwdqmiGaBe6V4H3i8DklO+6NcjlDp+gnVpVO6VtbrPwmWfGNwvDs7z6rh8Prm7nw=
