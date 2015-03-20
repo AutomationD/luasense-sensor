@@ -1,0 +1,55 @@
+function cat(file_name)
+    file.open(file_name, "r")
+    print(file.read())
+    file.close()
+end
+
+function ls()
+    l = file.list();
+    for k,v in pairs(l) do
+        print("name:"..k..", size:"..v)
+    end
+end
+
+function rm(file_name)
+    file.remove(file_name)
+    local file_exists = file.open(file_name, "r")
+    if file_exists then
+        print("Error. File still exists")
+        file.close()
+    end
+    
+end
+
+function reboot()
+    node.restart()
+end
+
+function status()
+    print('Luasense ver 0.0.3')
+    print('chip: ' .. node.chipid())
+    print('heap: ' .. node.heap() .. 'b')
+    print('flashid: ' .. node.flashid())
+    print('power: ' .. node.readvdd33() .. 'mV')
+    local wifi_mode = wifi.getmode()
+    if wifi_mode == 1 then --if Station mode
+        print('mode: STATION')
+        print('MAC: ' .. wifi.sta.getmac())
+        local ip = wifi.sta.getip()
+        if ip ~= nil then 
+            print('ip: '.. ip)
+            print('broadcast: ' .. wifi.sta.getbroadcast())
+        else
+            print('ip: n/a')
+            print('broadcast: n/a')
+        end
+        
+        print('AP: ' .. wifi.sta.getap())
+        print('status: ' .. wifi.sta.status())
+    elseif wifi_mode == 2 then --if AP mode
+        print('mode: AP')
+        print('MAC: ' .. wifi.ap.getmac())
+        print('ip: '.. wifi.ap.getip())
+--        print('broadcast: ' .. wifi.ap.getbroadcast)
+    end    
+end

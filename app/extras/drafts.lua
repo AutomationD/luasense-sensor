@@ -46,4 +46,11 @@ function getDHT11(PIN)
     return data
 end
 
+--        local req = httptiny.parseRequest(payload)
+--        print(payload) print(node.heap())
+--        local args = httptiny.parseUriArgs(req.uri).args
+--        print(args)
+--        local content = "<h1> Hello, NodeMcu.</h1> <BR />ap="..args.ap..", pw="..args.pw
+--        local content = "<h1> Hello, NodeMcu.</h1>"
+
 

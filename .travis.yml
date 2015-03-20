@@ -3,8 +3,7 @@ before_install:
 - sudo apt-get -y install srecord bc
 install:
 - mkdir -p $TRAVIS_BUILD_DIR/bin/
-- wget https://github.com/nodemcu/nodemcu-firmware/raw/master/pre_build/latest/nodemcu_latest.bin
-  -O $TRAVIS_BUILD_DIR/bin/0x00000.bin
+- wget https://github.com/nodemcu/nodemcu-firmware/releases/download/0.9.5_20150318/nodemcu_integer_0.9.5_20150318.bin -O $TRAVIS_BUILD_DIR/bin/0x00000.bin
 - git clone https://github.com/xlfe/spiffy.git spiffy
 script:
 - main_firmware_offset=0x$(echo "obase=16; $(($(stat --format="%s" $TRAVIS_BUILD_DIR/bin/0x00000.bin)))"

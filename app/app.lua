@@ -1,24 +1,24 @@
-
-
-dofile('json.lua')
+json = require('json')
+httptiny = require('httptiny')
 
 headers = {
-  "HTTP/1.1 200 OK",
-  "Content-Type: application/json; charset=utf-8",
-  "Cache-Control: no-cache, no-store, must-revalidate",
-  "Pragma: no-cache",
-  "Expires: 0",
+    "HTTP/1.1 200 OK",
+    "Content-Type: application/json; charset=utf-8",
+    "Cache-Control: no-cache, no-store, must-revalidate",
+    "Pragma: no-cache",
+    "Expires: 0",
 }
+
 
 srv=net.createServer(net.TCP,function () 
     print("Starting server")
 end,30)
 
 srv:listen(80,function(conn)
-  conn:on("receive",function(conn,payload)
+    conn:on("receive",function(conn,payload)
     sendResponse(conn, headers, getDHT(0))
-  end)
-  conn:on("sent",function(conn) conn:close() end)
+    end)
+    conn:on("sent",function(conn) conn:close() end)
 end)
 
 function getDHT(pin)
@@ -38,17 +38,17 @@ function getDHT(pin)
 end
 
 
-function sendResponse (conn,headers,data)
-  for key,header in pairs(headers) do
-    conn:send(header.."\r\n")
-    if (key == table.getn(headers)) then
-      conn:send("Connection: close\r\n\r\n")
-    end
-  end
 
-  if (data ~= nil) then
-    conn:send(toJson(data))  
-  else
-    conn:send("HTTP/1.1 503 Error")  
-  end
+function sendResponse (conn,headers,data)
+    for key,header in pairs(headers) do
+        conn:send(header.."\r\n")
+        if (key == table.getn(headers)) then
+            conn:send("Connection: close\r\n\r\n")
+        end
+    end
+    if (data ~= nil) then
+        conn:send(json.toJson(data))
+    else
+        conn:send("HTTP/1.1 503 Error")
+    end
 end
