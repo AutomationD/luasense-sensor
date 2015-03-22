@@ -2,13 +2,15 @@
 --require 'cli'
 --status()
 --f = assert(loadfile('config.lua'))
-if file.open('config.lua') == nil then
+if file.open('config.lua') == nil and file.open('config.lc') == nil then
     require 'setup'
 else
-    file.close() -- close handle after testing file
+--    file.close() -- close handle after testing file
     require 'config'
     wifi.setmode(wifi.STATION)
-    wifi.sta.config(config.ap,config.pw)
+    print("configuring with "..config.wifi.ap.." & "..config.wifi.pw)
+    wifi.sta.config(config.wifi.ap,config.wifi.pw)
+    wifi.sta.connect()
     tmr.alarm(0,1000, 1, function ()
         local currentIp = wifi.sta.getip()
         if currentIp==nil then
@@ -22,5 +24,5 @@ end
 ------------------
 ------------------
 function run ()
-    dofile("app.lua")
+    require 'app'
 end

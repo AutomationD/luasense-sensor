@@ -1,1 +1,2 @@
---require 'main'
+require 'main'
+--print(">require 'main'")

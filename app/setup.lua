@@ -11,7 +11,7 @@ local ap_config = {
     }
 }
 ---
-print('testtest')
+
 wifi.ap.config(ap_config.wifi)
 wifi.ap.setip(ap_config.network)
 
