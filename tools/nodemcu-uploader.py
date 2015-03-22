@@ -21,7 +21,7 @@ save_lua = \
       if string.byte(d, 1) == 1 then
         size = string.byte(d, 2)
         if size > 0 then
-          file.write(string.sub(d, 3, 3+size))
+          file.write(string.sub(d, 3, 3+size-1))
           uart.write(0,'\006')
         else
           uart.write(0,'\006')
@@ -107,8 +107,22 @@ class Uploader:
             log.error('error in save_lua "%s"' % d)
             return
 
+    def download_file(self, filename):
+        self.dump()
+        self._port.write(r"file.open('" + filename + r"') print(file.seek('end', 0)) file.seek('set', 0) uart.write(0, file.read()) file.close()" + '\n')
+        cmd, size, data = self.dump().split('\n', 2)
+        data = data[0:int(size)]
+        return data
 
-    def write_file(self, path, destination = ''):
+    def read_file(self, filename, destination = ''):
+        if not destination:
+            destination = filename
+        log.info('Transfering %s to %s' %(filename, destination))
+        data = self.download_file(filename)
+        with open(destination, 'w') as f:
+            f.write(data)
+
+    def write_file(self, path, destination = '', verify = False):
         filename = os.path.basename(path)
         if not destination:
             destination = filename
@@ -136,7 +150,11 @@ class Uploader:
         chunk_size = 128
         error = False
         while pos < len(content):
-            data = content[pos: pos+chunk_size]
+            rest = len(content) - pos
+            if rest > chunk_size:
+                rest = chunk_size
+
+            data = content[pos:pos+rest]
             if not self.write_chunk(data):
                 error = True
                 d = self.dump()
@@ -144,14 +162,17 @@ class Uploader:
                 break
 
             pos += chunk_size
-            if pos + chunk_size > len(content):
-                chunk_size = len(content) - pos
 
         log.debug('sending zero block')
         if not error:
             #zero size block
             self.write_chunk('')
 
+        if verify:
+            log.info('Verifying...')
+            data = self.download_file(destination)
+            if content != data:
+                log.error('Verification failed.')
 
     def got_ack(self):
         log.debug('waiting for ack')
@@ -190,10 +211,13 @@ class Uploader:
         return r
 
     def file_format(self):
-        log.info('Format')
+        log.info('Formating...')
         self._port.write('file.format()' + '\r\n')
         r = self.dump()
-        log.info(r)
+        while(r == '') or not ('format done' in r):
+            r = self.dump()
+            if r != '':
+                log.info(r)
         return r
 
     def node_heap(self):
@@ -234,7 +258,7 @@ def arg_auto_int(x):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'NodeMCU Lua file uploader', prog = 'nodemcu-uploader')
     parser.add_argument(
-        '--verbose', '-v',
+        '--verbose',
         help = 'verbose output',
         action = 'store_true',
         default = False)
@@ -258,18 +282,28 @@ if __name__ == '__main__':
         'upload',
         help = 'Path to one or more files to be uploaded. Destination name will be the same as the file name.')
 
-    upload_parser.add_argument(
-        '--filename', '-f',
-        help = 'File to upload. You can specify this option multiple times.',
-        action='append')
+    # upload_parser.add_argument(
+    #         '--filename', '-f',
+    #         help = 'File to upload. You can specify this option multiple times.',
+    #         action='append')
+
+    # upload_parser.add_argument(
+    #         '--destination', '-d',
+    #         help = 'Name to be used when saving in NodeMCU. You should specify one per file.',
+    #         action='append')
+
+    upload_parser.add_argument('filename', nargs='+', help = 'Lua file to upload. Use colon to give alternate destination.')
 
     upload_parser.add_argument(
-        '--destination', '-d',
-        help = 'Name to be used when saving in NodeMCU. You should specify one per file.',
-        action='append')
-    upload_parser.add_argument(
         '--compile', '-c',
-        help = 'If file should be uploaded and compiled',
+        help = 'If file should be uploaded as compiled',
+        action='store_true',
+        default=False
+    )
+
+    upload_parser.add_argument(
+        '--verify', '-v',
+        help = 'To verify the uploaded data.',
         action='store_true',
         default=False
     )
@@ -281,11 +315,54 @@ if __name__ == '__main__':
         default=False
     )
 
+    download_parser = subparsers.add_parser(
+        'download',
+        help = 'Path to one or more files to be downloaded. Destination name will be the same as the file name.')
+
+    # download_parser.add_argument(
+    #         '--filename', '-f',
+    #         help = 'File to download. You can specify this option multiple times.',
+    #         action='append')
+
+    # download_parser.add_argument(
+    #         '--destination', '-d',
+    #         help = 'Name to be used when saving in NodeMCU. You should specify one per file.',
+    #         action='append')
+
+    download_parser.add_argument('filename', nargs='+', help = 'Lua file to download. Use colon to give alternate destination.')
+
+    compile_parser = subparsers.add_parser(
+        'compile',
+        help = 'Path to one or more files to be compiled. Destination name will be the same as the file name.')
+
+    compile_parser.add_argument('filename', nargs='+', help = 'Lua file to download. Use colon to give alternate destination.')
+
+    compile_parser.add_argument(
+        '--restart', '-r',
+        help = 'If esp should be restarted',
+        action='store_true',
+        default=True
+    )
+    compile_parser.add_argument(
+        '--verify', '-v',
+        help = 'To verify the uploaded data.',
+        action='store_true',
+        default=True
+    )
+
+
     file_parser = subparsers.add_parser(
         'file',
         help = 'File functions')
 
     file_parser.add_argument('cmd', choices=('list', 'format'))
+
+    node_parse = subparsers.add_parser(
+        'node',
+        help = 'Node functions')
+
+    node_parse.add_argument('ncmd', choices=('heap', 'restart'))
+
 
     args = parser.parse_args()
 
@@ -296,28 +373,66 @@ if __name__ == '__main__':
     if args.verbose:
         log.setLevel(logging.DEBUG)
 
-    if args.operation == 'upload':
-        if not args.destination:
-            uploader.prepare()
-            for f in args.filename:
-                uploader.write_file(f)
-        elif len(args.destination) == len(args.filename):
-            uploader.prepare()
-            for f, d in zip(args.filename, args.destination):
-                uploader.write_file(f, d)
-                if args.compile:
-                    uploader.file_compile(d)
-                    uploader.file_remove(d)
+    if args.operation == 'upload' or args.operation == 'download' or args.operation == 'compile':
+        sources = args.filename
+        destinations = []
+        for i in range(0, len(sources)):
+            sd = sources[i].split(':')
+            if len(sd) == 2:
+                destinations.append(sd[1])
+                sources[i]=sd[0]
+            else:
+                destinations.append(sd[0])
+
+        if args.operation == 'upload':
+            if len(destinations) == len(sources):
+                uploader.prepare()
+                for f, d in zip(sources, destinations):
+                    uploader.write_file(f, d, args.verify)
+                    if args.compile:
+                        uploader.file_compile(d)
+                        uploader.file_remove(d)
+            else:
+                raise Exception('You must specify a destination filename for each file you want to upload.')
+
             if args.restart:
                 uploader.node_restart()
-        else:
-            raise Exception('You must specify a destination filename for each file you want to upload.')
-        print 'All done!'
+            print 'All done!'
+
+        if args.operation == 'download':
+            if len(destinations) == len(sources):
+                for f, d in zip(sources, destinations):
+                    uploader.read_file(f, d)
+            else:
+                raise Exception('You must specify a destination filename for each file you want to download.')
+            print 'All done!'
+
+        if args.operation == 'compile':
+            if len(destinations) == len(sources):
+                uploader.prepare()
+                for f, d in zip(sources, destinations):
+                    uploader.write_file(f, d, args.verify)
+                    uploader.file_compile(d)
+                    nd = d.replace('lua','lc')
+                    uploader.read_file(nd, nd)
+                    uploader.file_remove(d)
+                    uploader.file_remove(nd)
+                    if args.restart:
+                        uploader.node_restart()
+            else:
+                raise Exception('You must specify a destination filename for each file you want to download.')
+            print 'All done!'
 
     elif args.operation == 'file':
         if args.cmd == 'list':
             uploader.file_list()
         elif args.cmd == 'format':
             uploader.file_format()
+
+    elif args.operation == 'node':
+        if args.ncmd == 'heap':
+            uploader.node_heap()
+        elif args.ncmd == 'restart':
+            uploader.node_restart()
 
     uploader.close()
