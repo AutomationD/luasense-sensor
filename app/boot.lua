@@ -2,13 +2,15 @@
 --require 'cli'
 --status()
 --f = assert(loadfile('config.lua'))
+print('Loading boot. Heap: ' .. node.heap() .. 'b')
 if file.open('config.lua') == nil and file.open('config.lc') == nil then
+    print('Config not found. Heap: ' .. node.heap() .. 'b')
     require 'setup'
 else
---    file.close() -- close handle after testing file
+    file.close() -- close handle after testing file
     require 'config'
     wifi.setmode(wifi.STATION)
-    print("configuring with "..config.wifi.ap.." & "..config.wifi.pw)
+    print("Found config. Using AP:"..config.wifi.ap.." & PW:"..config.wifi.pw)
     wifi.sta.config(config.wifi.ap,config.wifi.pw)
     wifi.sta.connect()
     tmr.alarm(0,1000, 1, function ()

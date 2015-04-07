@@ -13,9 +13,9 @@ BAUD_RATE=9600
 # End of user config
 ######################################################################
 
-LUA_FILES := app/cli.lua app/app.lua app/main.lua app/setup.lua app/httptiny.lua
-LC_FILES := app/lc/cli.lc app/lc/app.lc app/lc/main.lc app/lc/setup.lc app/lc/httptiny.lc
-INIT_FILES := init.lua
+LUA_FILES := app/cli.lua app/app.lua app/main.lua app/setup.lua app/saveConfig.lua app/setupHtml.lua app/setupWifi.lua app/httptiny.lua
+LC_FILES := app/lc/cli.lc app/lc/app.lc app/lc/main.lc app/lc/setup.lc app/saveConfig.lc app/setupHtml.lc app/setupWifi.lc app/lc/httptiny.lc
+INIT_FILES := app/init.lua
 
 # Print usage
 usage:
@@ -31,14 +31,14 @@ compile: format $(LUA_FILES)
 
 # Upload app lua files
 upload_app: $(LUA_FILES)
-  $(foreach f, $^, ${NODEMCU_UPLOADER} -b ${BAUD_RATE} -p ${ESP_PORT} upload $(f):$(notdir $(f)) -c -r ;)
+	$(foreach f, $^, ${NODEMCU_UPLOADER} -b ${BAUD_RATE} -p ${ESP_PORT} upload $(f):$(notdir $(f)) -c -r ;)
 	#${NODEMCU_UPLOADER} --verbose -b ${BAUD_RATE} -p ${ESP_PORT} upload $(foreach f, $^,$(f):$(notdir $(f))) -c;
 
 upload_init: $(INIT_FILES)
-  $(foreach f, $^, ${NODEMCU_UPLOADER} -b ${BAUD_RATE} -p ${ESP_PORT} upload $(f):$(notdir $(f));)
+	$(foreach f, $^, ${NODEMCU_UPLOADER} -b ${BAUD_RATE} -p ${ESP_PORT} upload $(f):$(notdir $(f));)
 	#${NODEMCU_UPLOADER} -b ${BAUD_RATE} -p ${ESP_PORT} upload $(foreach f, $^,-f $(f) -d $(notdir $(f)));
   #${NODEMCU_UPLOADER} --verbose -b ${BAUD_RATE} -p ${ESP_PORT} upload $(foreach f, $^,$(f):$(notdir $(f)));
-  
+
 upload_app_lc: $(LC_FILES)
 	$(foreach f, $^, ${NODEMCU_UPLOADER} -b ${BAUD_RATE} -p ${ESP_PORT} upload $(f):$(notdir $(f));)
 	#${NODEMCU_UPLOADER} -b ${BAUD_RATE} -p ${ESP_PORT} upload $(foreach f, $^,-f $(f) -d $(notdir $(f)));

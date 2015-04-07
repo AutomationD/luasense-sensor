@@ -1,69 +1,60 @@
-print('heap: ' .. node.heap() .. 'b')
-local ap_config = {
-    wifi = {
-        ssid="Luasense",
-        pwd="Luasense"
-    },
-    network = {
-        ip="192.168.1.1",
-        netmask ="255.255.255.0",
-        gateway="192.168.1.1"
-    }
-}
----
-
-wifi.ap.config(ap_config.wifi)
-wifi.ap.setip(ap_config.network)
-
-wifi.setmode(wifi.SOFTAP)
-
-print('AP ip: '..ap_config.network.ip)
-srv=net.createServer(net.TCP)
+print('Setup loading. Heap: ' .. node.heap() .. 'b')
 local httptiny = require('httptiny')
-local savedOK = false
+
+local setupWifi = require('setupWifi')
+local savedOK = {}
+
+setupWifi.setupWifi()
+
+srv=net.createServer(net.TCP)
 srv:listen(80,function(conn)
     conn:on("receive",function(conn,payload)
-        local content = ''
+        print("Connection opened.")
+        local args = {}
+        local setupHtml = require('setupHtml')
+        local saveConfig = require('saveConfig')
         local uri = httptiny.parseRequest(payload).uri
-        local args = httptiny.parseUriArgs(uri)        
-        if args.mode == 'config' and args.action == 'save' and args.ap ~= nil and args.pw ~=nil then
-            local config = {ap = args.ap, pw = args.pw}
-            if saveConfig(config) then
-                savedOK = true
+        args = httptiny.parseUriArgs(uri)
+        print("uri="..uri)
+
+        if args.mode == 'config' then
+            if args.action == 'save' and args.ap ~= nil and args.pw ~=nil then
+                local config = {ap = args.ap, pw = args.pw }
+                print("config:save")
+
+                savedOK = saveConfig.saveConfig(config)
+                if savedOK then
+                    print("savedOK")
+                    conn:send(table.concat(setupHtml.configSaved(config),"\n"))
+
+                else
+                    print("saved Not OK")
+                    conn:send(table.concat(setupHtml.error("Can't save config"),"\n"))
+                end
+            else
+                conn:send(table.concat(setupHtml.error("unknown action."),"\n"))
             end
-            content = "<h1> Hello, NodeMcu.</h1>"
-                    .."<BR />"..args.pw
-            if savedOk then
-                content = content .. "saved"
+
+        elseif args.mode == 'node' then
+            if args.action == 'restart' then
+                print("node:restart")
+                print("mode="..args.mode)
+                conn:send(table.concat(setupHtml.redirect("http://www.google.com/"),"\n"))
+                -- TODO: Add this action to a normal mode, so it will show something after restart
+                node.restart()
+            else
+                conn:send(table.concat(setupHtml.error("unknown action."),"\n"))
             end
-            conn:send(content)
         else
-            conn:send("HTTP/1.1 503 Error")
+            conn:send(table.concat(setupHtml.configPage,"\n"))
         end
-        
     end)
-    conn:on("sent",function(conn)
+
+    conn:on("sent",function(conn, s)
+        print("Connection closed.")
         conn:close()
-        if savedOK then
-            srv:close()
-        end
     end)
-    
 end)
 
 
-
-------------
-------------
-function saveConfig(config)
-    file.open("config.lua", "w+")
-    file.write('config = {')
-    file.write("ap = '"..config.ap.."', ")
-    file.write("pw = '"..config.pw.."'")
-    file.write('}')
-    file.flush()
-    file.close()
-end
-
-
-print('heap: ' .. node.heap() .. 'b')
+print('Setup loaded. Heap: ' .. node.heap() .. 'b')

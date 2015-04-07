@@ -1,2 +1,5 @@
-require 'main'
---print(">require 'main'")
+--require 'boot'
+--print(">require 'boot'")
+function boot()
+    require 'boot'
+end
